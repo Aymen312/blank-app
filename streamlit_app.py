@@ -70,10 +70,17 @@ def display_designation_info(df, designation):
     else:
         # Add US and UK sizes for other designations
         for size in ['4', '5', '6', '7', '8', '9', '10', '11', '12']:
+            # Tailles US avec et sans zéro initial
             possible_sizes_us.append(f'{size}.0US')
             possible_sizes_us.append(f'{size}.5US')
+            possible_sizes_us.append(f'0{size}.0US')  # Ajout des tailles avec zéro initial
+            possible_sizes_us.append(f'0{size}.5US')  # Ajout des tailles avec zéro initial
+            
+            # Tailles UK avec et sans zéro initial
             possible_sizes_uk.append(f'{size}.0UK')
             possible_sizes_uk.append(f'{size}.5UK')
+            possible_sizes_uk.append(f'0{size}.0UK')  # Ajout des tailles avec zéro initial
+            possible_sizes_uk.append(f'0{size}.5UK')  # Ajout des tailles avec zéro initial
 
     # --- Affichage des tailles indisponibles ---
     st.subheader("Tailles indisponibles pour la désignation sélectionnée:")
@@ -81,9 +88,24 @@ def display_designation_info(df, designation):
     # Récupérer les tailles disponibles pour cette désignation
     available_sizes = df_filtered['taille'].unique()
 
-    # Trouver les tailles manquantes
-    unavailable_sizes_us = [size for size in possible_sizes_us if size not in available_sizes]
-    unavailable_sizes_uk = [size for size in possible_sizes_uk if size not in available_sizes]
+    # Fonction pour normaliser les tailles (supprimer les zéros initiaux)
+    def normalize_size(size):
+        if isinstance(size, str):
+            # Gère les cas comme "05.0US" -> "5.0US"
+            if size.startswith('0') and size[1].isdigit():
+                return size[1:]
+        return size
+
+    # Normaliser les tailles disponibles et possibles
+    normalized_available_sizes = [normalize_size(size) for size in available_sizes]
+    normalized_possible_sizes_us = [normalize_size(size) for size in possible_sizes_us]
+    normalized_possible_sizes_uk = [normalize_size(size) for size in possible_sizes_uk]
+
+    # Trouver les tailles manquantes (en comparant les versions normalisées)
+    unavailable_sizes_us = [size for size in possible_sizes_us 
+                          if normalize_size(size) not in normalized_available_sizes]
+    unavailable_sizes_uk = [size for size in possible_sizes_uk 
+                          if normalize_size(size) not in normalized_available_sizes]
 
     col1, col2 = st.columns(2)
 
@@ -99,7 +121,7 @@ def display_designation_info(df, designation):
         if unavailable_sizes_uk:
             st.write(unavailable_sizes_uk)
         else:
-            st.write("Toutes les tailles UK sont disponibles pour cette désignation.")
+            st.write("Toutes les tailles UK sont disponibles pour cette désignation."
 
 # --- Fonction modifiée pour "Stock Négatif" ---
 def filter_negative_stock(df):
